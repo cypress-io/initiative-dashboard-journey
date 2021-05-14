@@ -1,13 +1,15 @@
 describe('its flaky', {
   retries: 2
 }, () => {
-  Cypress._.times(5, (i) => {
-    it(`T${i + 1}`, () => {
-      expect(Math.random()).to.be.gt(.5)
-    })
-  })
+  // Cypress._.times(5, (i) => {
+  //   it(`T${i + 1}`, () => {
+  //     expect(Math.random()).to.be.gt(.5)
+  //   })
+  // })
 
-  it('is deterministic', {
-  retries: 0
-}, () => {})
+  it('is failing deterministically', {
+  retries: 3
+  }, () => {
+    throw new Error('ugh')
+  })
 })
