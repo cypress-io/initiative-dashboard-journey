@@ -1,11 +1,53 @@
 version: 2.1
-orbs:
-  # "cypress-io/cypress@1" installs the latest published
-  # version "1.x.y" of the orb. We recommend you then use
-  # the strict explicit version "cypress-io/cypress@1.x.y"
-  # to lock the version and prevent unexpected CI changes
-  cypress: cypress-io/cypress@1
-workflows:
+jobs:
   build:
+    working_directory: ~/cypress-onboarding-demo
+    docker:
+      - image: cypress/base:14
+        environment:
+          ## this enables colors in the output
+          TERM: xterm
+    steps:
+      - checkout
+      - restore_cache:
+          keys:
+            - v2-deps-{{ .Branch }}-{{ checksum "package.json" }}
+            - v2-deps-{{ .Branch }}
+            - v2-deps
+      - run:
+          name: Install Dependencies
+          command: yarn install --frozen-lockfile
+      - save_cache:
+          key: v2-deps-{{ .Branch }}-{{ checksum "package.json" }}
+          paths:
+            - node_modules
+            - ~/.cache ## cache both yarn and Cypress!
+      # - persist_to_workspace:
+      #     root: ~/
+      #     paths:
+      #       - ~/.cache
+      #       - cypress-onboarding-demo
+  run_tests:
+    working_directory: ~/cypress-onboarding-demo
+    docker:
+      - image: cypress/browsers:node14.15.0-chrome86-ff82
+        environment:
+          ## this enables colors in the output
+          TERM: xterm
+    parallelism: 3
+    steps:
+      # - attach_workspace:
+      #     at: ~/
+      - checkout
+      - restore_cache:
+          keys:
+            - v2-deps-{{ .Branch }}-{{ checksum "package.json" }}
+      - run: yarn cypress run --record --parallel
+workflows:
+  linux:
     jobs:
-      - cypress/run # "run" job comes from "cypress" orb
+      - build
+      - run_tests:
+          name: Run Cypress Tests
+          requires:
+            - build
